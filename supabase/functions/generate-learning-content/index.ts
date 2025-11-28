@@ -73,11 +73,28 @@ Return ONLY valid JSON in this exact format:
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Invalid response format");
-    
-    const learningContent = JSON.parse(jsonMatch[0]);
+    // Extract JSON using a more robust approach
+    let learningContent;
+    try {
+      // Try to find JSON between code blocks or plain text
+      const codeBlockMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (codeBlockMatch) {
+        learningContent = JSON.parse(codeBlockMatch[1]);
+      } else {
+        // Find the first { and last } for a more balanced extraction
+        const firstBrace = content.indexOf('{');
+        const lastBrace = content.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace === -1) {
+          throw new Error("No JSON object found in response");
+        }
+        const jsonStr = content.substring(firstBrace, lastBrace + 1);
+        learningContent = JSON.parse(jsonStr);
+      }
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Raw content:", content);
+      throw new Error("Failed to parse AI response as JSON");
+    }
 
     return new Response(JSON.stringify(learningContent), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
