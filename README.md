@@ -2,5 +2,5 @@
 
 ## Project info
 
-**URL**: https://speaksolvehub.loveable.app
+**URL**: https://speaksolvehub.lovable.app
 
